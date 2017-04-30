@@ -1,0 +1,22 @@
+# depslib dependency file v1.0
+1493578862 source:/home/luiz/Documentos/TP2SO/Sistemas-Operacionais---Tp2/Lista.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	"Lista.h"
+
+1493578329 /home/luiz/Documentos/TP2SO/Sistemas-Operacionais---Tp2/Lista.h
+	"Processo.h"
+
+1493578816 /home/luiz/Documentos/TP2SO/Sistemas-Operacionais---Tp2/Processo.h
+
+1493579247 source:/home/luiz/Documentos/TP2SO/Sistemas-Operacionais---Tp2/main.c
+	<stdio.h>
+	<stdlib.h>
+	"Lista.h"
+
+1493578874 source:/home/luiz/Documentos/TP2SO/Sistemas-Operacionais---Tp2/Processo.c
+	<stdio.h>
+	<stdlib.h>
+	"Processo.h"
+
