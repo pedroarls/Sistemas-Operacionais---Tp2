@@ -35,10 +35,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="Lista.h" />
-		<Unit filename="Processo.c">
+		<Unit filename="SimuladorProcesso.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="Processo.h" />
+		<Unit filename="SimuladorProcesso.h" />
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>

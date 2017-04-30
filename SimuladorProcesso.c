@@ -112,15 +112,14 @@ double calculaTempoMedioResposta(TabelaTempos tempoProcessos){
 }
 
 /*Lê um programa por um determinado nome de arquivo e o armazena em uma matriz*/
-int readProgram(char *nomeArquivo, char programa[][MAX_TAM_STRING]){
+int LePrograma(char *nomeArquivo, char programa[][MAX_TAM_STRING]){
   FILE *arq;
-  char buff[MAX_TAM_STRING], *pp;
-  int x, y, i, j;
+  char buff[MAX_TAM_STRING],;
+  int linha, coluna, i, j;
 
-  /* Initialize program arrays */
-  for(x=0;x<MAX_QTD_LINHAS;x++){
-    for(y=0;y<MAX_TAM_STRING;y++){
-      programa[x][y] = '\0';
+  for(linha=0;linha<MAX_QTD_LINHAS;linha++){
+    for(coluna=0;coluna<MAX_TAM_STRING;coluna++){
+      programa[linha][coluna] = '\0';
     }
   }
 
@@ -131,22 +130,16 @@ int readProgram(char *nomeArquivo, char programa[][MAX_TAM_STRING]){
   }
 
   i=0;
-  //if(DEBUG) printf("Read '%s' program:\n", fname);
-  while(1){
-    pp = fgets(buff, MAX_TAM_STRING, fp);
+  while((fgets(buff, MAX_TAM_STRING, fp)!= NULL){
 
-    // delete '\n' character if exists.
     j=0;
+    //deleta qebra de linhas
     while(buff[j] != '\0'){
       if(buff[j] == '\n') buff[j] = '\0';
       j++;
     }
 
     strcpy(programa[i], buff);
-    if(pp == NULL){
-      break;
-    }
-    //if(DEBUG) printf("%3d: '%s'\n", i, buff);
     i++;
   }
 
@@ -154,8 +147,8 @@ int readProgram(char *nomeArquivo, char programa[][MAX_TAM_STRING]){
   return(0);
 }
 
-/* Split a string by spaces and return array.*/
-char **split(int *n, char *string)
+/* Quebra a string por espaços e retorna um array*/
+char **quebra(int *n, char *string)
 {
   char **array=NULL;
   char *p=string;
