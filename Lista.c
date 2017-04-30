@@ -21,7 +21,7 @@ int Linsere(Tlista *lista,Processo x,int posicao)
     Tcelula *atual,*anterior,*aux;
     int i;
 
-    if(posicao==0)//Insere no final
+    if(posicao==-1)//Insere no final
     {
         lista->pultimo->pprox=(Tcelula*)malloc(sizeof(Tcelula));
         lista->pultimo=lista->pultimo->pprox;
@@ -29,7 +29,8 @@ int Linsere(Tlista *lista,Processo x,int posicao)
         lista->pultimo->pprox=NULL;
         return 1;
     }
-    if(posicao==1)//Insere na primeira posição
+
+    if(posicao==0)//Insere na primeira posição
     {
         aux=(Tcelula*)malloc(sizeof(Tcelula));
         aux->processo = x;
@@ -64,6 +65,23 @@ int Linsere(Tlista *lista,Processo x,int posicao)
     atual->pprox=anterior->pprox;
     anterior->pprox=atual;
     return 1;
+}
+
+int Lremove(Tlista* p){
+    Tcelula* aux;
+    int pid = -1;
+
+    if (!LEhVazia(p)){
+    //printf("DEQ(pid=%d)\n", (*p)->proc.pid);
+      pid = p->pprimeiro->processo.pid;
+      aux = p->pprimeiro;
+      p->pprimeiro = p->pprimeiro->pprox;
+      free(aux);
+      return pid;
+    }else{
+        printf("cannot remove, because queue is empty\n");
+    return pid;
+    }
 }
 
 void Limprime(Tlista *lista)

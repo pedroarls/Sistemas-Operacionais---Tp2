@@ -1,16 +1,16 @@
 # depslib dependency file v1.0
-1493578862 source:/home/luiz/Documentos/TP2SO/Sistemas-Operacionais---Tp2/Lista.c
+1493580927 source:/home/luiz/Documentos/TP2SO/Sistemas-Operacionais---Tp2/Lista.c
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
 	"Lista.h"
 
-1493578329 /home/luiz/Documentos/TP2SO/Sistemas-Operacionais---Tp2/Lista.h
-	"Processo.h"
+1493581097 /home/luiz/Documentos/TP2SO/Sistemas-Operacionais---Tp2/Lista.h
+	"SimuladorProcesso.h"
 
-1493578816 /home/luiz/Documentos/TP2SO/Sistemas-Operacionais---Tp2/Processo.h
+1493580106 /home/luiz/Documentos/TP2SO/Sistemas-Operacionais---Tp2/Processo.h
 
-1493579247 source:/home/luiz/Documentos/TP2SO/Sistemas-Operacionais---Tp2/main.c
+1493581260 source:/home/luiz/Documentos/TP2SO/Sistemas-Operacionais---Tp2/main.c
 	<stdio.h>
 	<stdlib.h>
 	"Lista.h"
@@ -19,4 +19,13 @@
 	<stdio.h>
 	<stdlib.h>
 	"Processo.h"
+
+1493583203 /home/luiz/Documentos/TP2SO/Sistemas-Operacionais---Tp2/SimuladorProcesso.h
+
+1493583403 source:/home/luiz/Documentos/TP2SO/Sistemas-Operacionais---Tp2/SimuladorProcesso.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	"Lista.h"
+	"SimuladorProcesso.h"
 

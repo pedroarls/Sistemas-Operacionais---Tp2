@@ -1,7 +1,7 @@
 #ifndef LISTA_H_INCLUDED
 #define LISTA_H_INCLUDED
 
-#include "Processo.h"
+#include "SimuladorProcesso.h"
 
 typedef struct celula
 {
@@ -18,6 +18,7 @@ typedef struct
 void FLvazia(Tlista *lista);
 int LEhVazia(Tlista *lista);
 int Linsere(Tlista *lista,Processo x,int posicao);
+int Lremove(Tlista* p);
 void Limprime(Tlista *lista);
 
 
