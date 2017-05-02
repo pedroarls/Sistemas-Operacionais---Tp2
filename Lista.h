@@ -5,7 +5,7 @@
 
 typedef struct celula
 {
-    Processo processo;
+    int pid;
     struct celula *pprox;
 }Tcelula;
 
@@ -17,7 +17,7 @@ typedef struct
 
 void FLvazia(Tlista *lista);
 int LEhVazia(Tlista *lista);
-int Linsere(Tlista *lista,Processo x,int posicao);
+int Linsere(Tlista *lista,int pid,int posicao);
 int Lremove(Tlista* p);
 void Limprime(Tlista *lista);
 

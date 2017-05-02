@@ -29,26 +29,30 @@
 	"Lista.h"
 	"SimuladorProcesso.h"
 
-1493650510 source:/home/juju/Desktop/SO/trabalhoSO/Sistemas-Operacionais---Tp2/Lista.c
+1493760429 source:/home/juju/Desktop/SO/trabalhoSO/Sistemas-Operacionais---Tp2/Lista.c
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
 	"Lista.h"
 
-1493650510 /home/juju/Desktop/SO/trabalhoSO/Sistemas-Operacionais---Tp2/Lista.h
+1493760210 /home/juju/Desktop/SO/trabalhoSO/Sistemas-Operacionais---Tp2/Lista.h
 	"SimuladorProcesso.h"
 
-1493650510 /home/juju/Desktop/SO/trabalhoSO/Sistemas-Operacionais---Tp2/SimuladorProcesso.h
+1493763014 /home/juju/Desktop/SO/trabalhoSO/Sistemas-Operacionais---Tp2/SimuladorProcesso.h
 
-1493650510 source:/home/juju/Desktop/SO/trabalhoSO/Sistemas-Operacionais---Tp2/main.c
+1493758373 source:/home/juju/Desktop/SO/trabalhoSO/Sistemas-Operacionais---Tp2/main.c
 	<stdio.h>
 	<stdlib.h>
 	"Lista.h"
+	"SimuladorProcesso.h"
 
-1493650510 source:/home/juju/Desktop/SO/trabalhoSO/Sistemas-Operacionais---Tp2/SimuladorProcesso.c
+1493763557 source:/home/juju/Desktop/SO/trabalhoSO/Sistemas-Operacionais---Tp2/SimuladorProcesso.c
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
+	<unistd.h>
+	<sys/types.h>
+	<sys/wait.h>
 	"Lista.h"
 	"SimuladorProcesso.h"
 

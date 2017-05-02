@@ -16,7 +16,7 @@ int LEhVazia(Tlista *lista)
     return(lista->pprimeiro==lista->pultimo);
 }
 
-int Linsere(Tlista *lista,Processo x,int posicao)
+int Linsere(Tlista *lista,int pid,int posicao)
 {
     Tcelula *atual,*anterior,*aux;
     int i;
@@ -25,7 +25,7 @@ int Linsere(Tlista *lista,Processo x,int posicao)
     {
         lista->pultimo->pprox=(Tcelula*)malloc(sizeof(Tcelula));
         lista->pultimo=lista->pultimo->pprox;
-        lista->pultimo->processo=x;
+        lista->pultimo->pid=pid;
         lista->pultimo->pprox=NULL;
         return 1;
     }
@@ -33,7 +33,7 @@ int Linsere(Tlista *lista,Processo x,int posicao)
     if(posicao==0)//Insere na primeira posição
     {
         aux=(Tcelula*)malloc(sizeof(Tcelula));
-        aux->processo = x;
+        aux->pid = pid;
         aux->pprox=lista->pprimeiro->pprox;
         lista->pprimeiro->pprox=aux;
         if(LEhVazia(&lista))
@@ -53,7 +53,7 @@ int Linsere(Tlista *lista,Processo x,int posicao)
         if(atual==NULL)
         {
             atual=(Tcelula*)malloc(sizeof(Tcelula));
-            atual->processo=x;
+            atual->pid=pid;
             atual->pprox=NULL;
             anterior->pprox=atual;
             lista->pultimo=atual;
@@ -61,7 +61,7 @@ int Linsere(Tlista *lista,Processo x,int posicao)
         }
     }
     atual=(Tcelula*)malloc(sizeof(Tcelula));
-    atual->processo=x;
+    atual->pid=pid;
     atual->pprox=anterior->pprox;
     anterior->pprox=atual;
     return 1;
@@ -73,13 +73,13 @@ int Lremove(Tlista* p){
 
     if (!LEhVazia(p)){
     //printf("DEQ(pid=%d)\n", (*p)->proc.pid);
-      pid = p->pprimeiro->processo.pid;
+      pid = p->pprimeiro->pid;
       aux = p->pprimeiro;
       p->pprimeiro = p->pprimeiro->pprox;
       free(aux);
       return pid;
     }else{
-        printf("cannot remove, because queue is empty\n");
+        printf("A fila está vazia\n");
     return pid;
     }
 }
@@ -87,7 +87,7 @@ int Lremove(Tlista* p){
 void Limprime(Tlista *lista)
 {
     Tcelula *aux;
-    Processo proc;
+    int pid;
 
     if(LEhVazia(lista))
        return;
@@ -96,12 +96,8 @@ void Limprime(Tlista *lista)
     while(aux!=NULL)
     {
         //proc = pcbTable[n->pid];
-        proc = aux->processo;
-        printf("pc, pid, ppid, priority, value, start time, CPU time used so far\n");
-        printf("%2d, %3d,  %3d, %8d, %5d, %10d, %3d\n",
-        proc.pc, proc.pid, proc.ppid, proc.prioridade,
-        proc.valor, proc.tempoInicio, proc.tempoUsado);
+        pid = aux->pid;
+        printf("pid = %2d\n",pid);
         aux=aux->pprox;
-
     }
 }
