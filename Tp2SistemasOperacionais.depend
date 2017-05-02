@@ -29,3 +29,26 @@
 	"Lista.h"
 	"SimuladorProcesso.h"
 
+1493650510 source:/home/juju/Desktop/SO/trabalhoSO/Sistemas-Operacionais---Tp2/Lista.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	"Lista.h"
+
+1493650510 /home/juju/Desktop/SO/trabalhoSO/Sistemas-Operacionais---Tp2/Lista.h
+	"SimuladorProcesso.h"
+
+1493650510 /home/juju/Desktop/SO/trabalhoSO/Sistemas-Operacionais---Tp2/SimuladorProcesso.h
+
+1493650510 source:/home/juju/Desktop/SO/trabalhoSO/Sistemas-Operacionais---Tp2/main.c
+	<stdio.h>
+	<stdlib.h>
+	"Lista.h"
+
+1493650510 source:/home/juju/Desktop/SO/trabalhoSO/Sistemas-Operacionais---Tp2/SimuladorProcesso.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	"Lista.h"
+	"SimuladorProcesso.h"
+
