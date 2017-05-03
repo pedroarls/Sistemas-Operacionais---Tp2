@@ -20,6 +20,7 @@ int main()
     printf("Para sair pressione qualquer outra tecla...\n\n");
     printf("Opcao: ");
     scanf("%d",&opcao);
+    fflush(stdin);
 
     switch (opcao)
     {

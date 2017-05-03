@@ -4,8 +4,8 @@
 #include <unistd.h>ř
 #include <sys/types.h>
 #include <sys/wait.h>
-#include "Lista.h"
 #include "SimuladorProcesso.h"
+
 
 Processo criarProcesso(int pid, int ppid, int prioridade, int pc, int valor,int tempoInicio, int tempoUsado, char *nomeArquivo)
 {
@@ -18,7 +18,7 @@ Processo criarProcesso(int pid, int ppid, int prioridade, int pc, int valor,int 
     processo.tempoInicio = tempoInicio;
     processo.tempoUsado = tempoUsado;
     strcpy(processo.nomeArquivo, nomeArquivo);
-    //readProgram(processo.nomeArquivo, processo.programa);
+    LePrograma(processo.nomeArquivo, processo.programa);
     return processo;
 }
 
@@ -35,6 +35,30 @@ Processo duplicaProcesso(Processo processoPai, int pidFilho, int tempoAtual)
     strcpy(copia.nomeArquivo, processoPai.nomeArquivo);
     LePrograma(copia.nomeArquivo, copia.programa);
     return copia;
+}
+
+void mostra(Tlista* listaProcessos, Processo TabelaProcessos[])
+{
+    Processo proc;
+    Tcelula* aux;
+
+    if (LEhVazia(listaProcessos))
+    {
+        printf("Lista vazia\n");
+        return ;
+    }
+    aux = listaProcessos->pprimeiro->pprox;
+    while (aux!=NULL)
+    {
+        proc = TabelaProcessos[aux->pid];
+        printf("pc, pid, ppid, priority, value, start time, CPU time used so far\n");
+        printf("%2d, %3d,  %3d, %8d, %5d, %10d, %3d\n",
+               proc.pc, proc.pid, proc.ppid, proc.prioridade,
+               proc.valor, proc.tempoInicio, proc.tempoUsado);
+        aux = aux->pprox;
+    }
+    printf("\n");
+    return;
 }
 
 void mostrarPorPrioridade(Tlista* lista,Processo pcbTable[], int prioridade)
@@ -66,7 +90,6 @@ void mostrarPorPrioridade(Tlista* lista,Processo pcbTable[], int prioridade)
     printf("\n");
     return;
 }
-
 
 void cpu2proc(CPU *cpu,Processo *proc)
 {
@@ -164,7 +187,7 @@ int LePrograma(char *nomeArquivo, char programa[][MAX_TAM_STRING])
             if(buff[j] == '\n') buff[j] = '\0';
             j++;
         }
-
+        //printf("%s\n",buff);
         strcpy(programa[i], buff);
         i++;
     }
@@ -174,7 +197,7 @@ int LePrograma(char *nomeArquivo, char programa[][MAX_TAM_STRING])
 }
 
 /* Quebra a string por espaços e retorna um array*/
-char **quebraPrograma(int *n, char *programa)
+char **quebraInstrucao(int *n, char *programa)
 {
     char **array=NULL;
     char *p=programa;
@@ -227,6 +250,7 @@ void ProcessCommander(char* nomeArquivo)
         printf("Erro na criação do processo filho.\n");
         exit(1);
     }
+
     else if (pid>0)  //Está executando o processo pai
     {
         close(fd[0]);//Fecha o arquivo de leitura do pipe, com base no descritor
@@ -237,7 +261,9 @@ void ProcessCommander(char* nomeArquivo)
             printf("Erro na leitura do arquivo do descritor.\n");
             exit(1);
         }
+        printf("Comando >");
         copiaArquivo(stdin, arq);//Copia dados da entrada padrão para o arquivo de escrita do pipe
+        fflush(stdin);
         fclose(arq);
 
         if(wait(&status) == -1)//Se ocorreu um erro no processo filho
@@ -254,37 +280,37 @@ void ProcessCommander(char* nomeArquivo)
 }
 //
 ///* Report the current status of system. */
-//void reporterProcess(int wfd, Processo pcbTable[], int time, struct TA_TIME ta,
-//                     QUE *s_run, QUE *s_ready, QUE *s_block)
-//{
-//    int i;
-//    printf("*********************************************\n");
-//    printf("The current system state is as follows:\n");
-//    printf("*********************************************\n");
-//    printf("CURRENT TIME: %d\n", time);
-//    printf("AVERAGE TURN AROUND TIME: %f.\n", calc_ta_time_avg(ta));
-//    printf("\n");
-//    printf("RUNNING PROCESS:\n");
-//    show(s_run, pcbTable);
-//
-//    printf("\n");
-//    printf("BLOCKED PROCESSES:\n");
-//    printf("Queue of blocked processes:\n");
-//    show(s_block, pcbTable);
-//
-//    printf("\n");
-//    printf("PROCESSES READY TO EXECUTE:\n");
-//
-//    for(i=0; i<MAX_PRIORITY; i++)
-//    {
-//        printf("Queue of processes with priority %d:\n", i);
-//        show_by_priority(s_ready, pcbTable, i);
-//    }
-//
-//    close(wfd); // Pipe Synchronized.
-//    exit(3);
-//}
-//
+void reporterProcess(int descritorLeitura, Processo tabelaProcessos[], int tempo, TabelaTempos tabTempos,
+                     Tlista estadoExecucao, Tlista estadoPronto, Tlista estadoBloqueado)
+{
+    int i;
+    printf("*********************************************\n");
+    printf("The current system state is as follows:\n");
+    printf("*********************************************\n");
+    printf("CURRENT TIME: %d\n", tempo);
+    printf("AVERAGE TURN AROUND TIME: %f.\n", calculaTempoMedioResposta(tabTempos));
+    printf("\n");
+    printf("RUNNING PROCESS:\n");
+    mostra(&estadoExecucao, tabelaProcessos);
+
+    printf("\n");
+    printf("BLOCKED PROCESSES:\n");
+    printf("Queue of blocked processes:\n");
+    mostra(&estadoBloqueado, tabelaProcessos);
+
+    printf("\n");
+    printf("PROCESSES READY TO EXECUTE:\n");
+
+    for(i=0; i<MAX_PRIORIDADE; i++)
+    {
+        printf("Queue of processes with priority %d:\n", i);
+        mostrarPorPrioridade(&estadoPronto, tabelaProcessos, i);
+    }
+
+    close(descritorLeitura); // Pipe Synchronized.
+    exit(1);
+}
+
 
 void ProcessManager(int descritorLeitura, char *programa)
 {
@@ -299,7 +325,7 @@ void ProcessManager(int descritorLeitura, char *programa)
     int arg;
     int i,x,y;
     int esperaDesbloquear = 0;
-    TabelaTempos tabTempos; //Para calcula a média do tempo de resposta
+
     Processo temp_proc;
     int valorTemp;
     int pidTemp;
@@ -307,13 +333,6 @@ void ProcessManager(int descritorLeitura, char *programa)
     int temp_index;
 
 
-    int tempoAtual;
-    CPU cpu;
-    Processo TabelaDeProcessos[MAX_QTD_PROCESSOS];
-
-    Tlista Prontos;
-    Tlista Bloqueados;
-    Tlista Executando;
 
     // Inicializando fatias de tempo
     quantum[0] = 1;
@@ -341,10 +360,13 @@ void ProcessManager(int descritorLeitura, char *programa)
     Linsere(&Executando, cpu.pid,-1);//guarda somente o pid do processo,
     //Para acessar um processo tem que ir na tabela de processos
 
-
-    while (fgets(buffer, BUFSIZ, arq) != NULL)
+    if((fgets(buffer,MAX_TAM_STRING, arq) == NULL))//Conferir depois
     {
+        printf("Error.");
+    }
 
+    while (fgets(buffer, MAX_TAM_STRING, arq)!= NULL)
+    {
         printf("Comando = %s",buffer);
         if(!strcmp(buffer, "Q\n") || !strcmp(buffer, "q\n")) //Aceita maiúscula e minúscula
         {
@@ -352,7 +374,7 @@ void ProcessManager(int descritorLeitura, char *programa)
             {
                 printf("Ha somente processos bloqueados, esperandos desbloquear.\n");
                 printf("\n");
-                printf("> ");
+                printf("\nComando > ");
                 fflush(stdout);
                 continue;
             }
@@ -366,7 +388,7 @@ void ProcessManager(int descritorLeitura, char *programa)
             }
             else
             {
-                instrucoes = quebraPrograma(&n, TabelaDeProcessos[cpu.pid].programa[cpu.pc]);
+                instrucoes = quebraInstrucao(&n, TabelaDeProcessos[cpu.pid].programa[cpu.pc]);
             }
 
             tempoAtual++;
@@ -417,212 +439,205 @@ void ProcessManager(int descritorLeitura, char *programa)
             else if(!strcmp(instrucoes[0], "F"))
             {
                 printf("Create %d new simulated process(es).\n", atoi(instrucoes[1]));
-                // arg = atoi(instrucoes[1]);
+                arg = atoi(instrucoes[1]);
 
                 cpu2proc(&cpu, &TabelaDeProcessos[cpu.pid]);
-                /* Duplicate a proc and enqueue it into Ready states queue. */
+                /* Duplica o processo e o coloca na lista de Prontos */
                 TabelaDeProcessos[pid_count] = duplicaProcesso(TabelaDeProcessos[cpu.pid], pid_count,tempoAtual);
                 pid_count++;
                 Linsere(&Prontos, pid_count-1,-1);
-                printf("Created a process(pid=%d).\n", pid_count-1);
+                printf("Criou um processo(pid=%d).\n", pid_count-1);
 
-                cpu.pc += arg; // Execute N instructions after the next instruction.
-                // Not necessary to schdule processes.
+                cpu.pc += arg; // Executa n instruções depois da próxima instrução.
 
             }
             else if(!strcmp(instrucoes[0],"R"))
             {
-                printf("Substittuindo o programa do processo simulado pelo programa no arquivo '%s'.\n", instrucoes[1]);
+                printf("Substituindo o programa do processo simulado pelo programa no arquivo '%s'.\n", instrucoes[1]);
                 strcpy(nomeArqTemp, instrucoes[1]);
                 cpu.pc = 0;
                 cpu.valor = 0;
 
                 LePrograma(nomeArqTemp, TabelaDeProcessos[cpu.pid].programa);
             }
+
             else
             {
                 printf("Instrução desconhecida\n");
                 printf("Erro!Saindo...\n");
                 return;
             }
-//
-//            /*** Do scheduling ***/
-//            if(Prontos == NULL)  // No processes in the Ready queue, so skipped.
-//            {
-//                if(Executando != NULL)
-//                {
-//                    printf("No ready processes, so continue to run the current process.\n");
-//                }
-//                else if(Bloqueados != NULL)
-//                {
-//                    printf("Only blocked processes remain, so waiting for unblocking.\n");
-//                    esperaDesbloquear = true;
-//                }
-//                else
-//                {
-//                    // All processes were finished -> finished execution.
-//                    if(err_flg == false) printf("Program was successfully executed.\n");
-//                    printf("\n");
-//                    printf("=== RESULT ===\n");
-//                    if (pipe(fd))
-//                    {
-//                        perror("pipe");
-//                    }
-//                    else if ((pidTemp = fork()) == -1)
-//                    {
-//                        perror("fork");
-//                    }
-//                    else if (temp_pid == 0)
-//                    {
-//                        close(fd[0]);
-//                        if(DEBUG) cpu2proc(&cpu, &pcbTable[cpu.pid]);
-//                        reporterProcess(fd[1], pcbTable, tempoAtual, tabTempos,
-//                                        Executando, Prontos, Bloqueados);
-//                    }
-//                    else
-//                    {
-//                        close(fd[1]);
-//                        while(i=(read(fd[0],&c,1)) > 0); // Pipe Synchronization
-//                    }
-//                    printf("=== END OF SYSTEM ===\n");
-//                    return;
-//                }
-//
-//
-//            }
-//            else if(Executando == NULL)   // When process was blocked or terminated.
-//            {
-//                printf("There are no process running, so assign the first process in the queue to CPU.\n");
-//                temp_pid = dequeue(&Prontos);
-//                proc2cpu(&pcbTable[temp_pid], &cpu);
-//                enqueue(&Executando, temp_pid);
-//                printf("Assigned: cpu <--- pcbTable[%d]\n", temp_pid);
-//
-//            }
-//            else if(cpu.t_remain <= 0)    // When quantum expired
-//            {
-//                printf("Quantum was expired, so assign the first process in the que to CPU.\n");
-//                set_next_priority(&pcbTable[cpu.pid]);
-//                printf("Pid(%d)'s priority class was raised to %d.\n",
-//                       cpu.pid, pcbTable[cpu.pid].priority);
-//                cpu2proc(&cpu, &pcbTable[cpu.pid]);
-//                enqueue(&Prontos, cpu.pid);
-//                temp_pid = dequeue(&Executando);
-//
-//                proc2cpu(&pcbTable[dequeue(&Prontos)], &cpu);
-//                enqueue(&Executando, cpu.pid);
-//                printf("Swithed: cpu(%d) <--> pid(%d)\n", temp_pid, cpu.pid);
-//
-//            }
-//            else if(cpu.t_remain > 0)
-//            {
-//                printf("CPU Time is still remained, so continue to run the current process.\n");
-//
-//            }
-//            else
-//            {
-//                printf("Unknown condition to schedule.\n");
-//            }
-//            /*** End of Scheduling ***/
-//            free(cmd);
-//            /* End of One Unit of Time*/
-//
-//        }
-//        else if(!strcmp(buffer, "U\n") || !strcmp(buffer, "u\n"))
-//        {
-//            printf("Unblock the first simulated process in blocked queue.\n");
-//            temp_index = dequeue(&Bloqueados);
-//            if(temp_index == -1)
-//            {
-//                printf("There are no states in blocked queue.\n");
-//            }
-//            else
-//            {
-//                printf("pid=%d moves from blocked queue to ready queue.\n", temp_index);
-//                enqueue(&Prontos, temp_index);
-//                esperaDesbloquear = false;
-//            }
-//
-//        }
-//        else if(!strcmp(buffer, "P\n") || !strcmp(buffer, "p\n"))
-//        {
-//            printf("Print the current state of the system.\n");
-//            if (pipe(fd))
-//            {
-//                perror("pipe");
-//            }
-//            else if ((temp_pid = fork()) == -1)
-//            {
-//                perror("fork");
-//            }
-//            else if (temp_pid == 0)
-//            {
-//                close(fd[0]);
-//                if(DEBUG) cpu2proc(&cpu, &pcbTable[cpu.pid]);
-//                reporterProcess(fd[1], pcbTable, tempoAtual, ta,
-//                                Executando, Prontos, Bloqueados);
-//            }
-//            else
-//            {
-//                close(fd[1]);
-//                while(i=(read(fd[0],&c,1)) > 0); // Pipe Synchronization
-//            }
-//
-//        }
-//        else if(!strcmp(buffer, "help\n"))
-//        {
-//            printf("\
-//     The following commands are accepted:\n\
-//     Q:End of one unitof time\n\
-//     - CPU consumes 1 instruction from programs, andexecuteit.\n\
-//     U: Unblockthe first simulated process in blocked queue\n\
-//     - If there is ablockedprocess, move its statefrom Blocked toReady.\n\
-//     P: Print the current state of the system.\n \
-//        - The state include PC, PID, PPID, Priority, Value, Time, etc.\n\
-//     T: Terminate the system after printing the current state.\n\
-//        - The printing is same as 'P' command.\n");
-//
-//        }
-//        else if(!strcmp(buffer, "T\n") || !strcmp(buffer, "t\n"))
-//        {
-//            printf("Print the average turnaround time, and terminate the system.\n");
-//            // Calculating average turnaround time.
-//            printf("Average turn around time is %f.\n", calc_ta_time_avg(ta));
-//            if (pipe(fd))
-//            {
-//                perror("pipe");
-//            }
-//            else if ((temp_pid = fork()) == -1)
-//            {
-//                perror("fork");
-//            }
-//            else if (temp_pid == 0)
-//            {
-//                close(fd[0]);
-//                if(DEBUG) cpu2proc(&cpu, &pcbTable[cpu.pid]);
-//                reporterProcess(fd[1], pcbTable, tempoAtual, ta,
-//                                Executando, Prontos, Bloqueados);
-//            }
-//            else
-//            {
-//                close(fd[1]);
-//                while(i=(read(fd[0],&c,1)) > 0); // Pipe Synchronization
-//            }
-//            printf("\n");
-//            printf("Terminate the system.\n");
-//            return;
-//
-//        }
-//        else
-//        {
-//            printf("Unknown command.\n");
-//        }
-        fputs(buffer, stdout);
-        printf("\n");
-        printf("> ");
-        fflush(stdout);
+            Escalonamento(&esperaDesbloquear,fd,&pidTemp);
+            free(instrucoes);
+
         }
-        fclose(arq);
+        else if(!strcmp(buffer, "U\n") || !strcmp(buffer, "u\n"))
+        {
+            printf("Unblock the first simulated process in blocked queue.\n");
+            temp_index = Lremove(&Bloqueados);
+            if(temp_index == -1)
+            {
+                printf("There are no states in blocked queue.\n");
+            }
+            else
+            {
+                printf("pid=%d moves from blocked queue to ready queue.\n", temp_index);
+                Linsere(&Prontos, temp_index,-1);
+                esperaDesbloquear = 0;
+            }
+
+        }
+        else if(!strcmp(buffer, "P\n") || !strcmp(buffer, "p\n"))
+        {
+            printf("Print the current state of the system.\n");
+            if (pipe(fd))
+            {
+                perror("pipe");
+            }
+            else if ((pidTemp = fork()) == -1)
+            {
+                perror("fork");
+            }
+            else if (pidTemp == 0)
+            {
+                close(fd[0]);
+                if(DEBUG) cpu2proc(&cpu, &TabelaDeProcessos[cpu.pid]);
+                reporterProcess(fd[1], TabelaDeProcessos, tempoAtual, tabTempos,
+                                Executando, Prontos, Bloqueados);
+            }
+            else
+            {
+                close(fd[1]);
+                while(i=(read(fd[0],&c,1)) > 0); // Pipe Synchronization
+            }
+
+        }
+        else if(!strcmp(buffer, "T\n") || !strcmp(buffer, "t\n"))
+        {
+            printf("Print the average turnaround time, and terminate the system.\n");
+            // Calculating average turnaround time.
+            printf("Average turn around time is %f.\n", calculaTempoMedioResposta(tabTempos));
+            if (pipe(fd))
+            {
+                perror("pipe");
+            }
+            else if ((pidTemp = fork()) == -1)
+            {
+                perror("fork");
+            }
+            else if (pidTemp == 0)
+            {
+                close(fd[0]);
+                if(DEBUG) cpu2proc(&cpu, &TabelaDeProcessos[cpu.pid]);
+//                reporterProcess(fd[1], pcbTable, tempoAtual, ta,
+//                                Executando, Prontos, Bloqueados);
+            }
+            else
+            {
+                close(fd[1]);
+                while(i=(read(fd[0],&c,1)) > 0); // Pipe Synchronization
+            }
+            printf("\n");
+            printf("Terminate the system.\n");
+            return;
+
+        }
+        else
+        {
+            printf("Unknown command.\n");
+        }
+        //fputs(buffer, stdout);
+        //printf("\n");
+        printf("\nComando > ");
+        fflush(stdout);
     }
+    fclose(arq);
+}
+
+ void Escalonamento(int* esperaDesbloquear, int fd[], int* pidTemp)
+{
+    int i;
+    char c;
+
+    if(LEhVazia(&Prontos))  // No processes in the Ready queue, so skipped.
+    {
+        if(!LEhVazia(&Executando))
+        {
+            printf("No ready processes, so continue to run the current process.\n");
+        }
+        else if(!LEhVazia(&Bloqueados))
+        {
+            printf("Only blocked processes remain, so waiting for unblocking.\n");
+            *esperaDesbloquear = 1;
+        }
+        else
+        {
+            // All processes were finished -> finished execution.
+            printf("=== RESULT ===\n");
+            if (pipe(fd))
+            {
+                perror("pipe");
+            }
+            else if ((*pidTemp = fork()) == -1)
+            {
+                perror("fork");
+            }
+            else if (*pidTemp == 0)
+            {
+                close(fd[0]);
+                if(DEBUG) cpu2proc(&cpu, &TabelaDeProcessos[cpu.pid]);
+                reporterProcess(fd[1], TabelaDeProcessos, tempoAtual, tabTempos,
+                                Executando, Prontos, Bloqueados);
+            }
+            else
+            {
+                close(fd[1]);
+                while(i=(read(fd[0],&c,1)) > 0); // Pipe Synchronization
+            }
+            printf("=== END OF SYSTEM ===\n");
+            return;
+        }
+
+
+    }
+    else if(LEhVazia(&Executando))   // When process was blocked or terminated.
+    {
+        printf("There are no process running, so assign the first process in the queue to CPU.\n");
+        pidTemp = Lremove(&Prontos);
+        proc2cpu(&TabelaDeProcessos[*pidTemp], &cpu);
+        Linsere(&Executando, pidTemp,-1);
+        printf("Assigned: cpu <--- pcbTable[%d]\n", pidTemp);
+
+    }
+    else if(cpu.tempoRestante<= 0)    // When quantum expired
+    {
+        printf("Quantum was expired, so assign the first process in the que to CPU.\n");
+        incrementaPrioridade(&TabelaDeProcessos[cpu.pid]);
+        printf("Pid(%d)'s priority class was raised to %d.\n",
+               cpu.pid, TabelaDeProcessos[cpu.pid].prioridade);
+        cpu2proc(&cpu, &TabelaDeProcessos[cpu.pid]);
+        Linsere(&Prontos, cpu.pid,-1);
+        pidTemp = Lremove(&Executando);
+
+        proc2cpu(&TabelaDeProcessos[Lremove(&Prontos)], &cpu);
+        Linsere(&Executando, cpu.pid,-1);
+        printf("Swithed: cpu(%d) <--> pid(%d)\n", pidTemp, cpu.pid);
+
+    }
+    else if(cpu.tempoRestante> 0)
+    {
+        printf("CPU Time is still remained, so continue to run the current process.\n");
+
+    }
+    else
+    {
+        printf("Unknown condition to schedule.\n");
+    }
+    /*** End of Scheduling ***/
+
+    /* End of One Unit of Time*/
 
 }
+
+
+
