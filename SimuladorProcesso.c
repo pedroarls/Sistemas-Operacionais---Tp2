@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>ř
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "SimuladorProcesso.h"
+#include <string.h>
 
 
 Processo criarProcesso(int pid, int ppid, int prioridade, int pc, int valor,int tempoInicio, int tempoUsado, char *nomeArquivo)
@@ -229,13 +230,13 @@ void copiaArquivo(FILE *arquivoEntrada, FILE *arquivoSaida)
 
 /* Commander process that manipulates inputs from users,
    and send them to Process Manager process. */
-void ProcessCommander(char* nomeArquivo)
+void ProcessCommander(char* nomeArquivo, char*  arqComandos, int flag)
 {
     //FILE *fp = fdopen(wfd, "w");
     int status,pid;
     int fd[2]; ///Descritores de arquivo do pipe, posição 0 leitura, posição 1 escrita
     char cmd[MAX_TAM_STRING];
-    FILE *arq;
+    FILE *arq,*arq1;
 
     if(pipe(fd)<0)
     {
@@ -261,10 +262,21 @@ void ProcessCommander(char* nomeArquivo)
             printf("Erro na leitura do arquivo do descritor.\n");
             exit(1);
         }
-        printf("Comando >");
-        copiaArquivo(stdin, arq);//Copia dados da entrada padrão para o arquivo de escrita do pipe
-        fflush(stdin);
-        fclose(arq);
+
+
+        if(flag ==  1)
+        {
+           printf("Comando >");
+           copiaArquivo(stdin, arq);//Copia dados da entrada padrão para o arquivo de escrita do pipe
+           fflush(stdin);
+           fclose(arq);
+        }
+        else
+        {
+            arq1 = fopen(arqComandos,"r");
+            copiaArquivo(arq1, arq);//Copia dados do arquivo
+            fclose(arq);
+        }
 
         if(wait(&status) == -1)//Se ocorreu um erro no processo filho
         {
@@ -554,7 +566,7 @@ void ProcessManager(int descritorLeitura, char *programa)
     fclose(arq);
 }
 
- void Escalonamento(int* esperaDesbloquear, int fd[], int* pidTemp)
+void Escalonamento(int* esperaDesbloquear, int fd[], int* pidTemp)
 {
     int i;
     char c;
@@ -603,10 +615,10 @@ void ProcessManager(int descritorLeitura, char *programa)
     else if(LEhVazia(&Executando))   // When process was blocked or terminated.
     {
         printf("There are no process running, so assign the first process in the queue to CPU.\n");
-        pidTemp = Lremove(&Prontos);
+        *pidTemp = Lremove(&Prontos);
         proc2cpu(&TabelaDeProcessos[*pidTemp], &cpu);
-        Linsere(&Executando, pidTemp,-1);
-        printf("Assigned: cpu <--- pcbTable[%d]\n", pidTemp);
+        Linsere(&Executando, *pidTemp,-1);
+        printf("Assigned: cpu <--- pcbTable[%d]\n", *pidTemp);
 
     }
     else if(cpu.tempoRestante<= 0)    // When quantum expired
@@ -617,11 +629,11 @@ void ProcessManager(int descritorLeitura, char *programa)
                cpu.pid, TabelaDeProcessos[cpu.pid].prioridade);
         cpu2proc(&cpu, &TabelaDeProcessos[cpu.pid]);
         Linsere(&Prontos, cpu.pid,-1);
-        pidTemp = Lremove(&Executando);
+        *pidTemp = Lremove(&Executando);
 
         proc2cpu(&TabelaDeProcessos[Lremove(&Prontos)], &cpu);
         Linsere(&Executando, cpu.pid,-1);
-        printf("Swithed: cpu(%d) <--> pid(%d)\n", pidTemp, cpu.pid);
+        printf("Trocado: cpu(%d) <--> pid(%d)\n", *pidTemp, cpu.pid);
 
     }
     else if(cpu.tempoRestante> 0)

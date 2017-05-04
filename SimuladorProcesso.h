@@ -9,7 +9,6 @@
 #define TAM_BUFFER 20
 #define DEBUG 1
 
-
 #define MAX_PRIORIDADE 4
 
 
@@ -62,10 +61,10 @@ int calculaTempoResposta(int tempoAtual, Processo p);
 Processo criarProcesso(int pid, int ppid, int prioridade, int pc, int valor,int tempoInicio, int tempoUsado, char *nomeArquivo);
 Processo duplicaProcesso(Processo processoPai, int pidFilho, int tempoAtual);
 
-void ProcessCommander(char* nomeArquivo);
+void ProcessCommander(char* nomeArquivo, char*  arqComandos, int flag);
 void ProcessManager(int descritorLeitura, char *programa);
 void reporterProcess(int descritorLeitura, Processo tabelaProcessos[], int tempo, TabelaTempos tabTempos,Tlista estadoExecucao, Tlista estadoPronto, Tlista estadoBloqueado);
- void Escalonamento(int* esperaDesbloquear, int fd[], int* pidTemp);
+void Escalonamento(int* esperaDesbloquear, int fd[], int* pidTemp);
 
 void proc2cpu(Processo *proc, CPU* cpu);
 

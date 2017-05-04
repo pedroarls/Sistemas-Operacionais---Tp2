@@ -9,8 +9,11 @@ int main()
     char nomeArquivo[MAX_TAM_STRING];
     printf("Digite o nome do arquivo com o programa inicial a ser executado:");
     scanf("%s",nomeArquivo);
+    char arqComandos[MAX_TAM_STRING];
 
-    if(nomeArquivo==NULL){
+    FILE* arq = fopen(nomeArquivo,"r");
+
+    if(arq==NULL){
         strcpy(nomeArquivo,"init.prog");//Define arquivo de leitura padrão
     }
 
@@ -26,11 +29,14 @@ int main()
     {
         case 1:
             //chama commander para inserir manualmente
-            ProcessCommander(nomeArquivo);
+            ProcessCommander(nomeArquivo,arqComandos,1);
             break;
 
         case 2:
             //chama commander para arquivo
+            printf("Digite o nome do arquivo com comandos: ");
+            scanf("%s",arqComandos);
+            ProcessCommander(nomeArquivo,arqComandos,0);
             break;
 
         default:
