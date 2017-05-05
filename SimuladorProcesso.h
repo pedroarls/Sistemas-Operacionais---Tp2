@@ -13,6 +13,10 @@
 
 
 int quantum[4];
+int tempoAtual;
+
+
+
 
 typedef struct TipoProcesso
 {
@@ -26,6 +30,7 @@ typedef struct TipoProcesso
     int tempoUsado;
     char nomeArquivo[MAX_TAM_STRING]; // Nome do arquivo para ler um programa
     char programa[MAX_QTD_LINHAS][MAX_TAM_STRING]; // Programa do processo simulado.
+    int tamanhoPrograma;
 } Processo;
 
 typedef struct  TipoCPU
@@ -44,26 +49,29 @@ typedef struct tempos
 } TabelaTempos;
 
 
-    int tempoAtual;
-    CPU cpu;
-    Processo TabelaDeProcessos[MAX_QTD_PROCESSOS];
-    TabelaTempos tabTempos; //Para calcular a média do tempo de resposta
+CPU cpu;
+Processo TabelaDeProcessos[MAX_QTD_PROCESSOS];
+TabelaTempos tabTempos; //Para calcular a média do tempo de resposta
 
-    Tlista Prontos;
-    Tlista Bloqueados;
-    Tlista Executando;
+Tlista Prontos;
+Tlista Bloqueados;
+Tlista Executando;
+
 
 void copiaArquivo(FILE *arquivoEntrada, FILE *arquivoSaida);
 char **quebraInstrucao(int *n, char *programa);
 void cpu2proc(CPU *cpu,Processo *proc);
 int calculaTempoResposta(int tempoAtual, Processo p);
+int LePrograma(char *nomeArquivo, Processo* proc);
+void EscalonamentoGrupo(int* esperaDesbloquear, int fd[], int* pidTemp);
+
 
 Processo criarProcesso(int pid, int ppid, int prioridade, int pc, int valor,int tempoInicio, int tempoUsado, char *nomeArquivo);
 Processo duplicaProcesso(Processo processoPai, int pidFilho, int tempoAtual);
 
-void ProcessCommander(char* nomeArquivo, char*  arqComandos, int flag);
-void ProcessManager(int descritorLeitura, char *programa);
-void reporterProcess(int descritorLeitura, Processo tabelaProcessos[], int tempo, TabelaTempos tabTempos,Tlista estadoExecucao, Tlista estadoPronto, Tlista estadoBloqueado);
+void ProcessCommander(char* nomeArquivo, char*  arqComandos, int flagComandos,int flagEscalonamento);
+void ProcessManager(int descritorLeitura, char *programa,int flagEscalonamento);
+void reporterProcess(int descritorEscrita, Processo tabelaProcessos[], int tempo, TabelaTempos tabTempos,Tlista estadoExecucao, Tlista estadoPronto, Tlista estadoBloqueado);
 void Escalonamento(int* esperaDesbloquear, int fd[], int* pidTemp);
 
 void proc2cpu(Processo *proc, CPU* cpu);

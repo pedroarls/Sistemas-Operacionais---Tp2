@@ -19,7 +19,7 @@ Processo criarProcesso(int pid, int ppid, int prioridade, int pc, int valor,int 
     processo.tempoInicio = tempoInicio;
     processo.tempoUsado = tempoUsado;
     strcpy(processo.nomeArquivo, nomeArquivo);
-    LePrograma(processo.nomeArquivo, processo.programa);
+    LePrograma(processo.nomeArquivo, &processo);
     return processo;
 }
 
@@ -33,8 +33,9 @@ Processo duplicaProcesso(Processo processoPai, int pidFilho, int tempoAtual)
     copia.valor = processoPai.valor;
     copia.tempoInicio = tempoAtual;
     copia.tempoUsado = 0;
+    copia.tamanhoPrograma = processoPai.tamanhoPrograma;
     strcpy(copia.nomeArquivo, processoPai.nomeArquivo);
-    LePrograma(copia.nomeArquivo, copia.programa);
+    LePrograma(copia.nomeArquivo,&copia);
     return copia;
 }
 
@@ -156,17 +157,17 @@ double calculaTempoMedioResposta(TabelaTempos tempoProcessos)
 }
 
 /*Lê um programa por um determinado nome de arquivo e o armazena em uma matriz*/
-int LePrograma(char *nomeArquivo, char programa[][MAX_TAM_STRING])
+int LePrograma(char *nomeArquivo, Processo* proc)
 {
     FILE *arq;
     char buff[MAX_TAM_STRING];
     int linha, coluna, i, j;
 
-    for(linha=0; linha<MAX_QTD_LINHAS; linha++)
+    for(linha=0; linha<MAX_QTD_LINHAS; linha++) //Limpa o espaço para armazenar o programa
     {
         for(coluna=0; coluna<MAX_TAM_STRING; coluna++)
         {
-            programa[linha][coluna] = '\0';
+            proc->programa[linha][coluna] = '\0';
         }
     }
 
@@ -178,6 +179,7 @@ int LePrograma(char *nomeArquivo, char programa[][MAX_TAM_STRING])
     }
 
     i=0;
+
     while((fgets(buff, MAX_TAM_STRING, arq)!= NULL))
     {
 
@@ -189,10 +191,10 @@ int LePrograma(char *nomeArquivo, char programa[][MAX_TAM_STRING])
             j++;
         }
         //printf("%s\n",buff);
-        strcpy(programa[i], buff);
+        strcpy(proc->programa[i], buff);
         i++;
     }
-
+    proc->tamanhoPrograma = i;
     fclose(arq);
     return(0);
 }
@@ -230,13 +232,16 @@ void copiaArquivo(FILE *arquivoEntrada, FILE *arquivoSaida)
 
 /* Commander process that manipulates inputs from users,
    and send them to Process Manager process. */
-void ProcessCommander(char* nomeArquivo, char*  arqComandos, int flag)
+void ProcessCommander(char* nomeArquivo, char*  arqComandos, int flagComandos, int flagEscalonamento)
 {
     //FILE *fp = fdopen(wfd, "w");
     int status,pid;
     int fd[2]; ///Descritores de arquivo do pipe, posição 0 leitura, posição 1 escrita
-    char cmd[MAX_TAM_STRING];
+    //char cmd[MAX_TAM_STRING];
     FILE *arq,*arq1;
+    FLvazia(&Prontos);
+    FLvazia(&Executando);
+    FLvazia(&Bloqueados);
 
     if(pipe(fd)<0)
     {
@@ -264,12 +269,12 @@ void ProcessCommander(char* nomeArquivo, char*  arqComandos, int flag)
         }
 
 
-        if(flag ==  1)
+        if(flagComandos ==  1)
         {
-           printf("Comando >");
-           copiaArquivo(stdin, arq);//Copia dados da entrada padrão para o arquivo de escrita do pipe
-           fflush(stdin);
-           fclose(arq);
+            printf("Comando >");
+            copiaArquivo(stdin, arq);//Copia dados da entrada padrão para o arquivo de escrita do pipe
+            fflush(stdin);
+            fclose(arq);
         }
         else
         {
@@ -287,44 +292,42 @@ void ProcessCommander(char* nomeArquivo, char*  arqComandos, int flag)
     else //Está executando o processo filho
     {
         close(fd[1]);
-        ProcessManager(fd[0],nomeArquivo);
+        ProcessManager(fd[0],nomeArquivo,flagEscalonamento);
     }
 }
 //
 ///* Report the current status of system. */
-void reporterProcess(int descritorLeitura, Processo tabelaProcessos[], int tempo, TabelaTempos tabTempos,
+void reporterProcess(int descritorEscrita, Processo tabelaProcessos[], int tempo, TabelaTempos tabTempos,
                      Tlista estadoExecucao, Tlista estadoPronto, Tlista estadoBloqueado)
 {
     int i;
-    printf("*********************************************\n");
-    printf("The current system state is as follows:\n");
-    printf("*********************************************\n");
-    printf("CURRENT TIME: %d\n", tempo);
-    printf("AVERAGE TURN AROUND TIME: %f.\n", calculaTempoMedioResposta(tabTempos));
+    printf("-------------ESTADO ATUAL DO SISTEMA------------\n");
+    printf("-> Tempo atual: %d\n", tempo);
+    printf("-> Tempo médio de resposta: %f.\n", calculaTempoMedioResposta(tabTempos));
     printf("\n");
-    printf("RUNNING PROCESS:\n");
+    printf("PROCESSOS EM EXECUCCAO\n");
     mostra(&estadoExecucao, tabelaProcessos);
 
     printf("\n");
-    printf("BLOCKED PROCESSES:\n");
-    printf("Queue of blocked processes:\n");
+    printf("PROCESSOS BLOQUEADOS:\n");
+    printf("Lista de processos bloqueados\n");
     mostra(&estadoBloqueado, tabelaProcessos);
 
     printf("\n");
-    printf("PROCESSES READY TO EXECUTE:\n");
+    printf("PROCESSOS PRONTOS PARA EXECUTAR\n");
 
     for(i=0; i<MAX_PRIORIDADE; i++)
     {
-        printf("Queue of processes with priority %d:\n", i);
+        printf("Lista de processos com prioridade %d:\n", i);
         mostrarPorPrioridade(&estadoPronto, tabelaProcessos, i);
     }
 
-    close(descritorLeitura); // Pipe Synchronized.
+    close(descritorEscrita); // Pipe Synchronized.
     exit(1);
 }
 
 
-void ProcessManager(int descritorLeitura, char *programa)
+void ProcessManager(int descritorLeitura, char *programa,int flagEscalonamento)
 {
     FILE *arq = fdopen(descritorLeitura, "r");
     int fd[2];
@@ -335,10 +338,10 @@ void ProcessManager(int descritorLeitura, char *programa)
     int c, n;
     int pid_count;
     int arg;
-    int i,x,y;
+    int i;
     int esperaDesbloquear = 0;
 
-    Processo temp_proc;
+    //Processo temp_proc;
     int valorTemp;
     int pidTemp;
     char nomeArqTemp[MAX_TAM_STRING];
@@ -450,7 +453,7 @@ void ProcessManager(int descritorLeitura, char *programa)
             }
             else if(!strcmp(instrucoes[0], "F"))
             {
-                printf("Create %d new simulated process(es).\n", atoi(instrucoes[1]));
+                printf("Criando processo filho e pulando %d instrucoes do pai.\n", atoi(instrucoes[1]));
                 arg = atoi(instrucoes[1]);
 
                 cpu2proc(&cpu, &TabelaDeProcessos[cpu.pid]);
@@ -470,7 +473,7 @@ void ProcessManager(int descritorLeitura, char *programa)
                 cpu.pc = 0;
                 cpu.valor = 0;
 
-                LePrograma(nomeArqTemp, TabelaDeProcessos[cpu.pid].programa);
+                LePrograma(nomeArqTemp, &TabelaDeProcessos[cpu.pid]);
             }
 
             else
@@ -479,7 +482,19 @@ void ProcessManager(int descritorLeitura, char *programa)
                 printf("Erro!Saindo...\n");
                 return;
             }
-            Escalonamento(&esperaDesbloquear,fd,&pidTemp);
+            if(flagEscalonamento==1)
+            {
+                Escalonamento(&esperaDesbloquear,fd,&pidTemp);
+            }
+            else if(flagEscalonamento==2)
+            {
+                EscalonamentoGrupo(&esperaDesbloquear,fd,&pidTemp);
+            }
+            else //Se digitar uma opção inválida
+            {
+                Escalonamento(&esperaDesbloquear,fd,&pidTemp);
+            }
+
             free(instrucoes);
 
         }
@@ -520,7 +535,7 @@ void ProcessManager(int descritorLeitura, char *programa)
             else
             {
                 close(fd[1]);
-                while(i=(read(fd[0],&c,1)) > 0); // Pipe Synchronization
+                while((i=(read(fd[0],&c,1))) > 0); // Pipe Synchronization
             }
 
         }
@@ -540,14 +555,16 @@ void ProcessManager(int descritorLeitura, char *programa)
             else if (pidTemp == 0)
             {
                 close(fd[0]);
-                if(DEBUG) cpu2proc(&cpu, &TabelaDeProcessos[cpu.pid]);
-//                reporterProcess(fd[1], pcbTable, tempoAtual, ta,
-//                                Executando, Prontos, Bloqueados);
+                if(DEBUG)
+                    cpu2proc(&cpu, &TabelaDeProcessos[cpu.pid]);
+
+                reporterProcess(fd[1], TabelaDeProcessos, tempoAtual, tabTempos,
+                                Executando, Prontos, Bloqueados);
             }
             else
             {
                 close(fd[1]);
-                while(i=(read(fd[0],&c,1)) > 0); // Pipe Synchronization
+                while((i=(read(fd[0],&c,1))) > 0); // Pipe Synchronization
             }
             printf("\n");
             printf("Terminate the system.\n");
@@ -604,9 +621,10 @@ void Escalonamento(int* esperaDesbloquear, int fd[], int* pidTemp)
             else
             {
                 close(fd[1]);
-                while(i=(read(fd[0],&c,1)) > 0); // Pipe Synchronization
+                while((i=(read(fd[0],&c,1))) > 0); // Pipe Synchronization
             }
-            printf("=== END OF SYSTEM ===\n");
+            printf("\n=== END OF SYSTEM ===\n");
+            exit(0);
             return;
         }
 
@@ -643,13 +661,132 @@ void Escalonamento(int* esperaDesbloquear, int fd[], int* pidTemp)
     }
     else
     {
-        printf("Unknown condition to schedule.\n");
+        printf("Erro ao escalonar.\n");
     }
-    /*** End of Scheduling ***/
-
-    /* End of One Unit of Time*/
 
 }
 
+void EscalonamentoGrupo(int* esperaDesbloquear, int fd[], int* pidTemp)
+{
+    char c;
+    int i,posicao=0;
+    int pidMenor, menorTamanho;
+    Tcelula* auxMenor;
+
+    Processo proc;
+    Tcelula* aux;
+
+    if (LEhVazia(&Prontos))
+    {
+        if(!LEhVazia(&Executando))
+        {
+            printf("Continua executando o processo atual...\n");
+        }
+        else if(!LEhVazia(&Bloqueados))
+        {
+            printf("Somente processsos bloqueados. Desbloqueie algum (Comando: U ou u).\n");
+            *esperaDesbloquear = 1;
+        }
+        else
+        {
+            // Todos os processos acabaram
+            printf("RESULTADO\n");
+            if (pipe(fd))
+            {
+                perror("pipe");
+            }
+            else if ((*pidTemp = fork()) == -1)
+            {
+                perror("fork");
+            }
+            else if (*pidTemp == 0) //processo filho
+            {
+                close(fd[0]);//Encerrando a leitura de comandos
+                if(DEBUG)
+                {
+                    cpu2proc(&cpu, &TabelaDeProcessos[cpu.pid]);
+                }
+                reporterProcess(fd[1], TabelaDeProcessos, tempoAtual, tabTempos,Executando, Prontos, Bloqueados);
+            }
+            else
+            {
+                close(fd[1]);
+                while((i=(read(fd[0],&c,1))) > 0); // Pipe Synchronization
+            }
+            printf("\n=== FIM SISTEMA ===\n");
+            exit(0);
+            return;
+        }
+    }
+    else if(LEhVazia(&Executando))
+    {
+        aux = Prontos.pprimeiro;
+        menorTamanho = TabelaDeProcessos[aux->pprox->pid].tamanhoPrograma;
+        auxMenor = aux;
+        aux = aux->pprox;
+
+        while (aux->pprox!=NULL)
+        {
+            if(TabelaDeProcessos[aux->pprox->pid].tamanhoPrograma < menorTamanho )
+            {
+                pidMenor = TabelaDeProcessos[aux->pprox->pid].pid;
+                menorTamanho = TabelaDeProcessos[aux->pprox->pid].tamanhoPrograma;
+                auxMenor = aux;
+            }
+            aux = aux->pprox;
+        }
+
+        LRetiraNoMeio(auxMenor,&Prontos,pidTemp);
+        proc2cpu(&TabelaDeProcessos[*pidTemp], &cpu);
+        Linsere(&Executando, *pidTemp,-1);
+        printf("Colocando na CPU processo de menor tamanho...\n");
+        printf("Tamanho do programa: %d.\n",TabelaDeProcessos[*pidTemp].tamanhoPrograma);
+        printf("Pid do processo: %d.\n", *pidTemp);
+
+    }
+    else if(cpu.tempoRestante <= 0)    // When quantum expired
+    {
+        printf("O tempo do processo acabou, selecionando o processo PRONTO com o menor programa.\n");
+        incrementaPrioridade(&TabelaDeProcessos[cpu.pid]);
+        printf("A nova prioridade é %d.\n", cpu.pid);
+        cpu2proc(&cpu, &TabelaDeProcessos[cpu.pid]);
+
+        *pidTemp = Lremove(&Executando);
+        Linsere(&Prontos, cpu.pid,-1);
+
+        aux = Prontos.pprimeiro;
+        menorTamanho = TabelaDeProcessos[aux->pprox->pid].tamanhoPrograma;
+        auxMenor = aux;
+
+        aux = aux->pprox;
+
+        while (aux->pprox!=NULL)
+        {
+            if(TabelaDeProcessos[aux->pprox->pid].tamanhoPrograma < menorTamanho )
+            {
+                pidMenor = TabelaDeProcessos[aux->pprox->pid].pid;
+                menorTamanho = TabelaDeProcessos[aux->pprox->pid].tamanhoPrograma;
+                auxMenor = aux;
+            }
+            aux = aux->pprox;
+        }
+        LRetiraNoMeio(auxMenor,&Prontos,pidTemp);
+
+        printf("\nTrocando: Processo na cpu(%d) <--> Processo tabela de processos pid(%d)\n", cpu.pid, pidMenor);
+        proc2cpu(&TabelaDeProcessos[pidMenor], &cpu);
+        Linsere(&Executando, cpu.pid,-1);
+
+    }
+    else if(cpu.tempoRestante> 0)
+    {
+        printf("Ainda sobra tempo de execução para o processo atual. Continuando a sua execução...\n");
+
+    }
+    else
+    {
+        printf("Erro ao escalonar.\n");
+    }
+
+}
 
 

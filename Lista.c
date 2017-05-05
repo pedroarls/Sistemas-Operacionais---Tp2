@@ -36,7 +36,7 @@ int Linsere(Tlista *lista,int pid,int posicao)
         aux->pid = pid;
         aux->pprox=lista->pprimeiro->pprox;
         lista->pprimeiro->pprox=aux;
-        if(LEhVazia(&lista))
+        if(LEhVazia(lista))
         {
             lista->pultimo=aux;
         }
@@ -46,7 +46,7 @@ int Linsere(Tlista *lista,int pid,int posicao)
     //Insere na posição desejada,se for maior que o tamanho da lista insere no final da lista
     atual=lista->pprimeiro->pprox;
     anterior=lista->pprimeiro;
-    for(i=1;i<posicao;i++)
+    for(i=1; i<posicao; i++)
     {
         anterior=atual;
         atual=atual->pprox;
@@ -67,20 +67,24 @@ int Linsere(Tlista *lista,int pid,int posicao)
     return 1;
 }
 
-int Lremove(Tlista* p){
+int Lremove(Tlista* p)
+{
     Tcelula* aux;
     int pid = -1;
 
-    if (!LEhVazia(p)){
-    //printf("DEQ(pid=%d)\n", (*p)->proc.pid);
-      pid = p->pprimeiro->pid;
-      aux = p->pprimeiro;
-      p->pprimeiro = p->pprimeiro->pprox;
-      free(aux);
-      return pid;
-    }else{
+    if (!LEhVazia(p))
+    {
+        //printf("DEQ(pid=%d)\n", (*p)->proc.pid);
+        pid = p->pprimeiro->pid;
+        aux = p->pprimeiro;
+        p->pprimeiro = p->pprimeiro->pprox;
+        free(aux);
+        return pid;
+    }
+    else
+    {
         printf("A fila está vazia\n");
-    return pid;
+        return pid;
     }
 }
 
@@ -90,8 +94,8 @@ void Limprime(Tlista *lista)
     int pid;
 
     if(LEhVazia(lista))
-       return;
-        //printf("A lista esta vazia!");
+        return;
+    //printf("A lista esta vazia!");
     aux=lista->pprimeiro->pprox;
     while(aux!=NULL)
     {
@@ -100,4 +104,24 @@ void Limprime(Tlista *lista)
         printf("pid = %2d\n",pid);
         aux=aux->pprox;
     }
+}
+
+void LRetiraNoMeio(Tcelula* p, Tlista *Lista, int *Item)
+{
+    Tcelula* q;
+
+    if ((LEhVazia(Lista)) || (p == NULL) || (p->pprox == NULL))
+    {
+        printf(" Erro   Lista vazia ou posicao nao existe\n");
+        return;
+    }
+
+    q = p->pprox;
+    *Item = q->pid;
+    p->pprox = q->pprox;
+    if (p->pprox == NULL )
+    {
+        Lista->pultimo = p;
+    }
+    free(q);
 }

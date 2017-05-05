@@ -87,24 +87,25 @@
 	<sys/wait.h>
 	"SimuladorProcesso.h"
 
-1493926338 source:/home/juju/Desktop/SO/trabalhoQuinta/Sistemas-Operacionais---Tp2/Lista.c
+1494023745 source:/home/juju/Desktop/SO/trabalhoQuinta/Sistemas-Operacionais---Tp2/Lista.c
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
 	"Lista.h"
 
-1493926338 /home/juju/Desktop/SO/trabalhoQuinta/Sistemas-Operacionais---Tp2/Lista.h
+1494017829 /home/juju/Desktop/SO/trabalhoQuinta/Sistemas-Operacionais---Tp2/Lista.h
 
-1493929408 source:/home/juju/Desktop/SO/trabalhoQuinta/Sistemas-Operacionais---Tp2/main.c
+1494020953 source:/home/juju/Desktop/SO/trabalhoQuinta/Sistemas-Operacionais---Tp2/main.c
 	<stdio.h>
 	<stdlib.h>
+	<string.h>
 	"Lista.h"
 	"SimuladorProcesso.h"
 
-1493929136 /home/juju/Desktop/SO/trabalhoQuinta/Sistemas-Operacionais---Tp2/SimuladorProcesso.h
+1494016801 /home/juju/Desktop/SO/trabalhoQuinta/Sistemas-Operacionais---Tp2/SimuladorProcesso.h
 	"Lista.h"
 
-1493929589 source:/home/juju/Desktop/SO/trabalhoQuinta/Sistemas-Operacionais---Tp2/SimuladorProcesso.c
+1494023526 source:/home/juju/Desktop/SO/trabalhoQuinta/Sistemas-Operacionais---Tp2/SimuladorProcesso.c
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
